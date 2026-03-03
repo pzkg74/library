@@ -42,120 +42,113 @@ if (localStorage.getItem("library") === null) {
 	library = JSON.parse(localStorage.getItem("library"));
 }
 
-class Book2 {
+class Book {
 	constructor(title, author, hasRead) {
 		this.id = crypto.randomUUID();
 		this.title = title;
 		this.author = author;
 		this.hasRead = hasRead;
 	}
-}
 
-function Book(title, author, hasRead) {
-	if (!new.target) {
-		throw Error('Must use "new" keyword.');
+	static addBookToLibrary(title, author, hasRead) {
+		const newBook = new Book(title, author, hasRead);
+		library.push(newBook);
 	}
 
-	this.id = crypto.randomUUID();
-	this.title = title;
-	this.author = author;
-	this.hasRead = hasRead;
-}
+	static displayBooks() {
+		main.innerHTML = "";
 
-function addBookToLibrary(title, author, hasRead) {
-	const newBook = new Book(title, author, hasRead);
-	library.push(newBook);
-}
-
-function displayBooks() {
-	main.innerHTML = "";
-
-	library.forEach((book) => {
-		const newBook = bookTemplate.content.cloneNode(true);
-		newBook.querySelector("article").dataset.id = book.id;
-		newBook.querySelector("article").style.viewTransitionName =
-			`book-${book.id}`;
-		newBook.querySelector("button").ariaLabel =
-			`Toggle read status for ${book.title} by ${book.author}`;
-		newBook.querySelector(".deleteBook").ariaLabel =
-			`Delete ${book.title} by ${book.author}`;
-		newBook.querySelector("h2").textContent = book.title;
-		newBook.querySelector("h3").textContent = book.author;
-		if (book.hasRead) {
-			const readButton = newBook.querySelector("button");
-			readButton.dataset.hasRead = true;
-			readButton.textContent = "Read";
-		}
-
-		newBook.querySelector(".readButton").addEventListener("click", (event) => {
-			if (event.target.dataset.hasRead === "true") {
-				event.target.dataset.hasRead = false;
-				event.target.textContent = "Not Read";
-				const currentBook = library.find(
-					(book) => book.id === event.target.closest("article").dataset.id,
-				);
-				currentBook.hasRead = false;
-			} else {
-				event.target.dataset.hasRead = true;
-				event.target.textContent = "Read";
-				const currentBook = library.find(
-					(book) => book.id === event.target.closest("article").dataset.id,
-				);
-				currentBook.hasRead = true;
+		library.forEach((book) => {
+			const newBook = bookTemplate.content.cloneNode(true);
+			newBook.querySelector("article").dataset.id = book.id;
+			newBook.querySelector("article").style.viewTransitionName =
+				`book-${book.id}`;
+			newBook.querySelector("button").ariaLabel =
+				`Toggle read status for ${book.title} by ${book.author}`;
+			newBook.querySelector(".deleteBook").ariaLabel =
+				`Delete ${book.title} by ${book.author}`;
+			newBook.querySelector("h2").textContent = book.title;
+			newBook.querySelector("h3").textContent = book.author;
+			if (book.hasRead) {
+				const readButton = newBook.querySelector("button");
+				readButton.dataset.hasRead = true;
+				readButton.textContent = "Read";
 			}
-			updateLocalStorage();
+
+			newBook
+				.querySelector(".readButton")
+				.addEventListener("click", (event) => {
+					if (event.target.dataset.hasRead === "true") {
+						event.target.dataset.hasRead = false;
+						event.target.textContent = "Not Read";
+						const currentBook = library.find(
+							(book) => book.id === event.target.closest("article").dataset.id,
+						);
+						currentBook.hasRead = false;
+					} else {
+						event.target.dataset.hasRead = true;
+						event.target.textContent = "Read";
+						const currentBook = library.find(
+							(book) => book.id === event.target.closest("article").dataset.id,
+						);
+						currentBook.hasRead = true;
+					}
+					updateLocalStorage();
+				});
+
+			newBook
+				.querySelector(".deleteBook")
+				.addEventListener("click", (event) => {
+					const currentArticle = event.target.closest("article");
+
+					const currentBook = {};
+					library.forEach((book, i) => {
+						if (book.id === currentArticle.dataset.id) {
+							currentBook.title = book.title;
+							currentBook.author = book.author;
+							library.splice(i, 1);
+							return;
+						}
+					});
+
+					currentArticle.style.viewTransitionName = "none";
+					document.startViewTransition(() => {
+						currentArticle.remove();
+					});
+					updateLocalStorage();
+
+					document.ariaNotify(
+						`${currentBook.title} by ${currentBook.author} was deleted from your library`,
+						{ priority: "high" },
+					);
+				});
+
+			main.append(newBook);
 		});
 
-		newBook.querySelector(".deleteBook").addEventListener("click", (event) => {
-			const currentArticle = event.target.closest("article");
+		const addBook = addBookTemplate.content.cloneNode(true);
+		main.append(addBook);
 
-			const currentBook = {};
-			library.forEach((book, i) => {
-				if (book.id === currentArticle.dataset.id) {
-					currentBook.title = book.title;
-					currentBook.author = book.author;
-					library.splice(i, 1);
-					return;
-				}
-			});
+		const addBookElement = document.getElementById("addBook");
+		addBookElement.style.viewTransitionName = "book-add-book";
 
-			currentArticle.style.viewTransitionName = "none";
-			document.startViewTransition(() => {
-				currentArticle.remove();
-			});
-			updateLocalStorage();
-
-			document.ariaNotify(
-				`${currentBook.title} by ${currentBook.author} was deleted from your library`,
-				{ priority: "high" },
-			);
-		});
-
-		main.append(newBook);
-	});
-
-	const addBook = addBookTemplate.content.cloneNode(true);
-	main.append(addBook);
-
-	const addBookElement = document.getElementById("addBook");
-	addBookElement.style.viewTransitionName = "book-add-book";
-
-	addBookElement.addEventListener("click", () => {
-		addBookDialog.showModal();
-		newBookInput.title.focus();
-	});
-
-	addBookElement.addEventListener("keydown", (event) => {
-		if (event.key === "Enter" || event.key === " ") {
-			event.preventDefault();
+		addBookElement.addEventListener("click", () => {
 			addBookDialog.showModal();
 			newBookInput.title.focus();
-		}
-	});
+		});
+
+		addBookElement.addEventListener("keydown", (event) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				addBookDialog.showModal();
+				newBookInput.title.focus();
+			}
+		});
+	}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-	displayBooks();
+	Book.displayBooks();
 
 	addBookForm.addEventListener("submit", (event) => {
 		if (newBookInput.title.value === "" && newBookInput.author.value === "") {
@@ -177,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			return;
 		}
 
-		addBookToLibrary(
+		Book.addBookToLibrary(
 			newBookInput.title.value,
 			newBookInput.author.value,
 			false,
