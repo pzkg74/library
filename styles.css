@@ -73,7 +73,6 @@ main {
 			.readButton {
 				width: 90px;
 
-				/* TODO: dialog is too wide on mobile */
 				&:focus-visible {
 					outline: 2px solid black;
 					outline-offset: 4px;

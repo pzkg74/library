@@ -42,6 +42,15 @@ if (localStorage.getItem("library") === null) {
 	library = JSON.parse(localStorage.getItem("library"));
 }
 
+class Book2 {
+	constructor(title, author, hasRead) {
+		this.id = crypto.randomUUID();
+		this.title = title;
+		this.author = author;
+		this.hasRead = hasRead;
+	}
+}
+
 function Book(title, author, hasRead) {
 	if (!new.target) {
 		throw Error('Must use "new" keyword.');
